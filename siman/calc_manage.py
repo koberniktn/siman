@@ -206,7 +206,7 @@ def inherit_ngkpt(it_to, it_from, inputset):
     return
 
 
-def choose_cluster(cluster_name, cluster_home, corenum, nodes):
+def choose_cluster(cluster_name, corenum, nodes):
     """
     *cluster_name* should be in header.project_conf.CLUSTERS dict
     nodes - number of nodes
@@ -242,20 +242,16 @@ def choose_cluster(cluster_name, cluster_home, corenum, nodes):
 
 
     #Determine cluster home using ssh
-    # run_on_server('touch ~/.hushlogin', header.cluster_address)
     if header.copy_to_cluster_flag:
-        header.cluster_home = run_on_server('pwd', header.cluster_address)
+        if 'homepath' in clust and clust['homepath']:
+            header.cluster_home = clust['homepath']
+        else:
+            header.cluster_home = run_on_server('pwd', header.cluster_address)
+            clust['homepath'] = header.cluster_home
     else:
         header.cluster_home = ''
-    
-    clust['homepath'] = header.cluster_home
-
+        
     printlog('The home folder on cluster is ', header.cluster_home)
-
-    # if cluster_home is None:
-    #     header.cluster_home    = clust['homepath']
-    # else:
-    #     header.cluster_home    = cluster_home
     
 
 
@@ -1263,6 +1259,7 @@ def add_loop(it = None, setlist = None, verlist = 1, calc = None, varset = None,
                       or (hasattr(varset[ise_new], 'k_effective_mass') and varset[ise_new].k_effective_mass) ): #copy chgcar
             # calc[id_base].path["charge"]
             printlog('Copying CHGCAR for band structure/effective mass', imp = 'y')
+            print(f'!!!! FROM CHGCAR copy calc[id_base].path["charge"]={calc[id_base].path["charge"]}, header.project_path_cluster + calc[id].dir={header.project_path_cluster + '/' + calc[id].dir + '/'}')
             # print('calc_manage.py, string 1664, calc[id_base].path["charge"] ', calc[id_base].path["charge"])
             if copy_to_server: 
                 wrapper_cp_on_server(calc[id_base].path["charge"], header.project_path_cluster + '/' + calc[id].dir + '/', new_filename = 'CHGCAR')
@@ -2040,6 +2037,7 @@ def inherit_icalc(inherit_type, it_new, ver_new, id_base, calc = None, st_base =
 
     # hstring = ("%s    #on %s"% (traceback.extract_stack(None, 2)[0][3],   datetime.date.today() ) )
     printlog('Starting inherit_icalc', imp = 'n')
+    printlog(f'type(id_base)={type(id_base)}')
     
     hstring = "inherit_icalc(it_new = '{:s}', ver_new = {:s}, id_base = {:s}, id_from = {:s})   # on {:s}".format(
         it_new, str(ver_new), str(id_base), str(id_from), str( datetime.date.today())   )
@@ -2160,7 +2158,9 @@ def inherit_icalc(inherit_type, it_new, ver_new, id_base, calc = None, st_base =
         section_folder = struct_des[it_new].sfolder
 
 
-    it_new_folder = header.geo_folder +'/' + section_folder + '/' + it_new
+    print(f'!!!! FROM calc_manager: header.geo_folder={header.geo_folder}, section_folder={section_folder}, it_new={it_new}')
+    it_new_folder = os.path.join(header.geo_folder, section_folder, it_new)
+    print(f'!!!! FROM calc_manager: it_new_folder={it_new_folder}')
 
     if geo_folder == '':
         new.path["input_geo"] = it_new_folder + '/' +it_new+'.inherit.'+inherit_type+'.'+str(ver_new)+'.'+'geo'
@@ -2511,7 +2511,7 @@ def inherit_icalc(inherit_type, it_new, ver_new, id_base, calc = None, st_base =
 
 
 
-    return
+    return 
 
 
 
